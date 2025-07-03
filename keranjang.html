@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>Keranjang | Toko Kita</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.2/vanilla-tilt.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <style>
+    :root {
+      --pastel-brown: #f1e7dd;
+    }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--pastel-brown);
+      overflow-x: hidden;
+    }
+    .dark body {
+      background-color: #1e1e1e;
+    }
+        header a {
+      position: relative;
+      transition: color 0.3s;
+    }
+    header a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -2px;
+      width: 0;
+      height: 2px;
+      background-color: #f59e0b;
+      transition: width 0.3s ease;
+    }
+    header a:hover::after {
+      width: 100%;
+    }
+    .card {
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .dark .card {
+      background: rgba(40, 40, 40, 0.5);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.1);
+    }
+    .bubble {
+      position: absolute;
+      bottom: -100px;
+      width: 20px;
+      height: 20px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+      animation: rise 15s infinite linear;
+      left: 10%;
+    }
+    .bubble.delay-2 { left: 30%; animation-delay: 2s; }
+    .bubble.delay-4 { left: 70%; animation-delay: 4s; }
+    @keyframes rise {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-150vh); opacity: 0; }
+    }
+    .toggle-switch {
+      width: 44px;
+      height: 24px;
+      background-color: #d1d5db;
+      border-radius: 9999px;
+      cursor: pointer;
+      position: relative;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background-color: white;
+      border-radius: 9999px;
+      transition: transform 0.3s ease;
+    }
+    .toggle-switch.active {
+      background-color: #4b5563;
+    }
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+
+    .menu-icon span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  margin: 5px auto;
+  background-color: #374151;
+  transition: all 0.3s ease-in-out;
+}
+
+.menu-icon.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.menu-icon.open span:nth-child(2) {
+  opacity: 0;
+}
+.menu-icon.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+    
+  </style>
+</head>
+<body class="text-gray-800 dark:text-gray-200 transition-colors duration-300 relative">
+
+<!-- Bubble background -->
+<div class="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden">
+  <div class="bubble"></div>
+  <div class="bubble delay-2"></div>
+  <div class="bubble delay-4"></div>
+</div>
+
+<!-- Header -->
+<header id="main-header" class="bg-white/90 dark:bg-gray-900/90 backdrop-blur sticky-nav sticky top-0 z-50 shadow-lg">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <a href="index.html" class="text-3xl font-extrabold tracking-wide animate-gradient bg-clip-text text-transparent">Toko Kita</a>
+    <div class="flex items-center gap-6 ml-auto">
+      <nav id="menu" class="hidden sm:flex gap-6 text-sm sm:text-base font-medium">
+        <a href="index.html" class="hover:text-amber-700 transition">Beranda</a>
+        <a href="keranjang.html" class="hover:text-amber-700 transition">Keranjang</a>
+      </nav>
+      <div class="toggle-wrapper">
+        <div id="darkToggle" class="toggle-switch" title="Toggle Dark Mode"></div>
+      </div>
+      <div id="menu-btn" class="sm:hidden cursor-pointer menu-icon">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+  <div id="mobile-menu" class="sm:hidden hidden px-6 pb-4 space-y-2 text-sm">
+    <a href="index.html" class="block text-gray-700 dark:text-gray-200 hover:text-amber-700">Beranda</a>
+    <a href="keranjang.html" class="block text-gray-700 dark:text-gray-200 hover:text-amber-700">Keranjang</a>
+  </div>
+</header>
+
+<!-- Keranjang -->
+<div class="max-w-4xl mx-auto p-6">
+  <h2 class="text-3xl font-extrabold text-center mb-10 text-amber-900 dark:text-amber-200">Keranjang Belanja</h2>
+  <div id="daftar-keranjang" class="space-y-4">
+    <div class="card p-4 rounded-xl flex items-center gap-4" data-id="${item.product_id}">
+  <img src="${p.image_url ? API_URL.replace('/api', '') + p.image_url : 'https://via.placeholder.com/300'}" class="w-24 h-24 rounded object-cover shadow" />
+  <div class="flex-1">
+    <div class="font-bold text-lg">${p.name}</div>
+    <div class="text-sm text-gray-600 dark:text-gray-400">
+      <input type="number" min="1" value="${item.qty}" 
+             class="qty-input w-16 px-2 py-1 rounded border dark:border-gray-700 bg-white dark:bg-gray-800 text-center text-black dark:text-white" />
+      x Rp${p.price.toLocaleString()}
+    </div>
+    <div class="subtotal text-amber-700 dark:text-amber-300 font-bold">Rp${(item.qty * p.price).toLocaleString()}</div>
+  </div>
+  <button class="hapus-btn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+</div>
+  </div>
+  <div class="mt-10 text-right">
+    <button onclick="checkoutWhatsApp()" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg shadow transition">Checkout via WhatsApp</button>
+  </div>
+</div>
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 py-6 mt-10">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
+      <p>&copy; 2025 Toko Kita. All rights reserved.</p>
+      <div class="flex space-x-4 mt-4 md:mt-0">
+        <a href="#" class="hover:text-amber-700 transition">Privasi</a>
+        <a href="#" class="hover:text-amber-700 transition">Syarat</a>
+        <a href="#" class="hover:text-amber-700 transition">Bantuan</a>
+      </div>
+    </div>
+  </footer>
+<!-- Script -->
+<!-- Pastikan bagian akhir script seperti ini -->
+<script>
+  const API_URL = 'https://rifkira.psl17.my.id/api';
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+  let detailCart = [];
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('menu-btn');
+    const menu = document.getElementById('mobile-menu');
+
+    if (btn && menu) {
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+        btn.classList.toggle('open');
+      });
+    }
+
+    // Toggle shadow on scroll
+    const header = document.getElementById('main-header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 10) {
+        header.classList.add('shadow-md');
+      } else {
+        header.classList.remove('shadow-md');
+      }
+    });
+  });
+
+  // Toggle Dark Mode
+  document.getElementById('darkToggle').addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    document.getElementById('darkToggle').classList.toggle('active');
+  });
+
+  async function loadCart() {
+    const container = document.getElementById('daftar-keranjang');
+    container.innerHTML = '';
+
+    if (cart.length === 0) {
+      container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Keranjang kosong.</p>';
+      return;
+    }
+
+    detailCart = [];
+
+    for (let item of cart) {
+      const res = await fetch(`${API_URL}/products/${item.product_id}`);
+      const p = await res.json();
+      detailCart.push({ ...p, qty: item.qty });
+    }
+
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById('daftar-keranjang');
+    container.innerHTML = '';
+    let total = 0;
+
+    detailCart.forEach((item, index) => {
+      const subtotal = item.qty * item.price;
+      total += subtotal;
+
+      const el = document.createElement('div');
+      el.className = 'card p-4 rounded-xl flex items-center gap-4 fade-up';
+      el.setAttribute('data-id', item.id);
+      el.setAttribute('data-tilt', '');
+      el.setAttribute('style', `animation-delay: ${index * 100}ms`);
+      el.innerHTML = `
+        <img src="${item.image_url ? API_URL.replace('/api', '') + item.image_url : 'https://via.placeholder.com/300'}" class="w-24 h-24 rounded object-cover shadow" />
+
+        <div class="flex-1">
+          <div class="font-bold text-lg">${item.name}</div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">
+            <input type="number" min="1" value="${item.qty}" 
+                   class="qty-input w-16 px-2 py-1 rounded border dark:border-gray-700 bg-white dark:bg-gray-800 text-center text-black dark:text-white" />
+            x Rp${item.price.toLocaleString()}
+          </div>
+          <div class="subtotal text-amber-700 dark:text-amber-300 font-bold">Rp${subtotal.toLocaleString()}</div>
+        </div>
+        <button class="hapus-btn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+      `;
+      container.appendChild(el);
+    });
+
+    container.innerHTML += `<div id="total-harga" class="text-right font-bold text-xl mt-4">Total: Rp${total.toLocaleString()}</div>`;
+
+    // Aktifkan kembali tilt & animasi
+    VanillaTilt.init(document.querySelectorAll(".card"), {
+      max: 10,
+      speed: 400,
+      glare: true,
+      "max-glare": 0.3
+    });
+
+    setupEvents();
+  }
+
+  function setupEvents() {
+    document.querySelectorAll('.hapus-btn').forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.parentElement.getAttribute('data-id'));
+        cart = cart.filter(c => c.product_id !== id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+      });
+    });
+
+    document.querySelectorAll('.qty-input').forEach((input, index) => {
+      input.addEventListener('change', () => {
+        let newQty = parseInt(input.value);
+        if (newQty < 1) newQty = 1;
+        input.value = newQty;
+
+        detailCart[index].qty = newQty;
+        cart[index].qty = newQty;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart(); // rerender & re-apply animasi
+      });
+    });
+  }
+
+  function checkoutWhatsApp() {
+    let total = 0;
+    let message = 'Halo, saya ingin memesan:\n';
+    detailCart.forEach(p => {
+      message += `- ${p.name} x ${p.qty} = Rp${(p.price * p.qty).toLocaleString()}\n`;
+      total += p.price * p.qty;
+    });
+    message += `\nTotal: Rp${total.toLocaleString()}`;
+    const wa = `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`;
+    window.open(wa, '_blank');
+  }
+
+  loadCart();
+  
+</script>
+
+</body>
+</html>
