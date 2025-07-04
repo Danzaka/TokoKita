@@ -215,16 +215,22 @@
     document.documentElement.classList.toggle('dark');
     document.getElementById('darkToggle').classList.toggle('active');
   });
-  async function loadDetail() {
-      try {
-      updateCartCount();
+async function loadDetail() {
+  try {
+    updateCartCount();
+
     const res = await fetch(`${API_URL}/${id}`);
     const data = await res.json();
     const container = document.getElementById('product');
 
-    const sizes = data.size ? data.size.split(',') : [];
-    const colors = data.color ? data.color.split(',') : [];
-    const category = data.category || "Umum";
+    const variants = data.variants || [];
+    if (variants.length === 0) {
+      container.innerHTML = `<p class="text-red-600">Produk ini belum memiliki varian.</p>`;
+      return;
+    }
+
+    // Default varian pertama
+    let selectedVariant = variants[0];
 
     container.innerHTML = `
       <div class="card p-4 rounded-xl shadow-lg" data-tilt>
@@ -233,30 +239,79 @@
       <div>
         <h1 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">${data.name}</h1>
         <p class="text-sm mb-1 text-gray-500 dark:text-gray-400">Kategori: 
-          <span class="font-medium text-amber-700 dark:text-amber-300">${category}</span>
+          <span class="font-medium text-amber-700 dark:text-amber-300">${data.category || 'Umum'}</span>
         </p>
-        <p class="text-amber-700 text-2xl font-semibold mb-4">Rp${Number(data.price).toLocaleString()}</p>
+        <p id="hargaProduk" class="text-amber-700 text-2xl font-semibold mb-4">
+          Rp${parseInt(selectedVariant.price).toLocaleString('id-ID')}
+        </p>
 
-        ${sizes.length > 0 ? `
+        <!-- Pilih Ukuran -->
         <div class="mb-4">
           <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Ukuran:</label>
           <select id="ukuran" class="w-full rounded-lg border dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-800 dark:text-white">
-            ${sizes.map(size => `<option value="${size}">${size}</option>`).join('')}
+            ${[...new Set(variants.map(v => v.size))].map(size => `<option value="${size}">${size}</option>`).join('')}
           </select>
-        </div>` : ''}
+        </div>
 
-        ${colors.length > 0 ? `
+        <!-- Pilih Warna -->
         <div class="mb-4">
           <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Warna:</label>
           <select id="warna" class="w-full rounded-lg border dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-800 dark:text-white">
-            ${colors.map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('')}
+            ${[...new Set(variants.map(v => v.color))].map(color => `<option value="${color}">${color}</option>`).join('')}
           </select>
-        </div>` : ''}
+        </div>
 
         <p class="text-gray-700 dark:text-gray-300 leading-relaxed mt-6">${data.description || "Tidak ada deskripsi."}</p>
         <button id="addToCartBtn" class="inline-block mt-6 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-6 rounded-lg transition">Tambah ke Keranjang</button>
       </div>
     `;
+
+    // Perbarui harga saat pilihan berubah
+    const ukuranSelect = document.getElementById('ukuran');
+    const warnaSelect = document.getElementById('warna');
+    const hargaLabel = document.getElementById('hargaProduk');
+
+    function updateHarga() {
+      const selectedSize = ukuranSelect.value;
+      const selectedColor = warnaSelect.value;
+      selectedVariant = variants.find(v => v.size === selectedSize && v.color === selectedColor);
+      if (selectedVariant) {
+        hargaLabel.innerHTML = `Rp${parseInt(selectedVariant.price).toLocaleString('id-ID')}`;
+      } else {
+        hargaLabel.innerHTML = `<span class="text-red-500 text-sm">Varian tidak tersedia</span>`;
+      }
+    }
+
+    ukuranSelect.addEventListener('change', updateHarga);
+    warnaSelect.addEventListener('change', updateHarga);
+    updateHarga();
+
+    document.getElementById('addToCartBtn').addEventListener('click', () => {
+      if (!selectedVariant) {
+        alert("Varian yang dipilih tidak tersedia.");
+        return;
+      }
+
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      const existing = cart.find(p => p.variant_id === selectedVariant.id);
+
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({
+          product_id: data.id,
+          variant_id: selectedVariant.id,
+          size: selectedVariant.size,
+          color: selectedVariant.color,
+          price: selectedVariant.price,
+          qty: 1
+        });
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCartCount();
+      flyToCartAnimation();
+    });
 
     VanillaTilt.init(document.querySelectorAll(".card"), {
       max: 15,
@@ -265,41 +320,12 @@
       "max-glare": 0.3
     });
 
-    function updateCartCount() {
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
-  const total = cart.reduce((sum, item) => sum + item.qty, 0);
-  const countElem = document.getElementById('cart-count');
-  if (countElem) {
-    countElem.textContent = total;
-  }
-}
-
-    document.getElementById('addToCartBtn').addEventListener('click', () => {
-      const selectedSize = document.getElementById('ukuran')?.value || '';
-      const selectedColor = document.getElementById('warna')?.value || '';
-
-      const cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const existing = cart.find(p => p.product_id == data.id && p.size == selectedSize && p.color == selectedColor);
-
-      if (existing) {
-        existing.qty += 1;
-      } else {
-        cart.push({
-          product_id: data.id,
-          size: selectedSize,
-          color: selectedColor,
-          qty: 1
-        });
-      }
-
-      localStorage.setItem('cart', JSON.stringify(cart));
-      flyToCartAnimation(); // opsional efek animasi
-    });
-
   } catch (err) {
     document.getElementById('product').innerHTML = `<p class="text-red-600">Gagal memuat detail produk.</p>`;
+    console.error(err);
   }
 }
+
 function flyToCartAnimation() {
   const img = document.getElementById('productImage');
   if (!img) return;
