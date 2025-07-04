@@ -228,11 +228,30 @@
 
     detailCart = [];
 
-    for (let item of cart) {
-      const res = await fetch(`${API_URL}/products/${item.product_id}`);
-      const p = await res.json();
-      detailCart.push({ ...p, qty: item.qty });
-    }
+for (let item of cart) {
+  const res = await fetch(`${API_URL}/products/${item.product_id}`);
+  const p = await res.json();
+
+  // Temukan varian yang cocok
+  const variant = p.variants?.find(v => 
+    v.id === item.variant_id || 
+    (v.size === item.size && v.color === item.color)
+  );
+
+  if (!variant) continue;
+
+  detailCart.push({
+    id: p.id,
+    name: p.name,
+    image_url: p.image_url,
+    qty: item.qty,
+    price: variant.price,
+    size: variant.size,
+    color: variant.color,
+    variant_id: variant.id
+  });
+}
+
 
     renderCart();
   }
