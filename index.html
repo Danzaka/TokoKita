@@ -219,86 +219,100 @@
     </div>
   </footer>
 
-  <script>
-    const API_URL = 'https://rifkira.psl17.my.id/api';
-    updateCartCount();
+<script>
+  const API_URL = 'https://rifkira.psl17.my.id/api';
 
-    const btn = document.getElementById('menu-btn');
-    const menu = document.getElementById('mobile-menu');
+  // Update jumlah keranjang dari localStorage
+  function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const total = cart.reduce((sum, item) => sum + item.qty, 0);
+    const countElem = document.getElementById('cart-count');
+    if (countElem) {
+      countElem.textContent = total;
+    }
+  }
+  updateCartCount();
+
+  // Hamburger menu toggle
+  const btn = document.getElementById('menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  if (btn && menu) {
     btn.addEventListener('click', () => {
       menu.classList.toggle('hidden');
       btn.classList.toggle('open');
     });
+  }
 
-    const header = document.getElementById('main-header');
+  // Tambahkan shadow ke header saat scroll
+  const header = document.getElementById('main-header');
+  if (header) {
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 10) {
-        header.classList.add('shadow-md');
-      } else {
-        header.classList.remove('shadow-md');
-      }
+      header.classList.toggle('shadow-md', window.scrollY > 10);
     });
+  }
 
-    const darkToggle = document.getElementById('darkToggle');
+  // Toggle dark mode
+  const darkToggle = document.getElementById('darkToggle');
+  if (darkToggle) {
     darkToggle.addEventListener('click', () => {
       const html = document.documentElement;
       html.classList.toggle('dark');
       darkToggle.classList.toggle('active');
     });
+  }
 
-    function updateCartCount() {
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const total = cart.reduce((sum, item) => sum + item.qty, 0);
-        const countElem = document.getElementById('cart-count');
-        if (countElem) {
-        countElem.textContent = total;
-        }
+  // Load produk dari API
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${API_URL}/products`);
+      if (!res.ok) throw new Error('Gagal memuat produk');
+      const data = await res.json();
+
+      const container = document.getElementById('produk-container');
+      const loader = document.getElementById('loader');
+      if (loader) loader.style.display = 'none';
+      if (container) container.classList.remove('hidden');
+
+      data.forEach((p, i) => {
+        const variant = p.variants?.[0] || null;
+
+        const el = document.createElement('div');
+        el.className = 'card p-4 rounded-xl shadow-lg fade-up bg-white dark:bg-gray-800 cursor-pointer transition-transform transform hover:scale-105';
+        el.setAttribute('data-tilt', '');
+        el.style.animationDelay = `${i * 100}ms`;
+        el.addEventListener('click', () => {
+          window.location.href = `detail.html?id=${p.id}`;
+        });
+
+        el.innerHTML = `
+          <img src="${p.image_url ? API_URL.replace('/api', '') + p.image_url : 'https://via.placeholder.com/300'}"
+               alt="${p.name}" class="w-full h-48 object-cover rounded-md mb-3">
+          <h2 class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">${p.name}</h2>
+          <p class="text-gray-500 text-sm dark:text-gray-400 mb-1">
+            ${p.category}${variant && variant.color ? ' - ' + variant.color : ''}
+          </p>
+          <p class="text-amber-700 font-bold text-md mb-1">
+            ${variant && variant.price ? 'Rp' + parseInt(variant.price).toLocaleString('id-ID') : 'Harga tidak tersedia'}
+          </p>
+        `;
+
+        container?.appendChild(el);
+      });
+
+      // Efek tilt
+      VanillaTilt.init(document.querySelectorAll(".card"), {
+        max: 15,
+        speed: 400,
+        glare: true,
+        "max-glare": 0.3
+      });
+
+    } catch (err) {
+      console.error('Error saat load produk:', err.message);
     }
+  }
 
-async function loadProducts() {
-  const res = await fetch(`${API_URL}/products`);
-  const data = await res.json();
-  const container = document.getElementById('produk-container');
-  const loader = document.getElementById('loader');
-  loader.style.display = 'none';
-  container.classList.remove('hidden');
-
-  data.forEach((p, i) => {
-    const variant = p.variants && p.variants.length > 0 ? p.variants[0] : null;
-
-    const el = document.createElement('div');
-    el.className = 'card p-4 rounded-xl shadow-lg fade-up bg-white dark:bg-gray-800 cursor-pointer transition-transform transform hover:scale-105';
-    el.setAttribute('data-tilt', '');
-    el.style.animationDelay = `${i * 100}ms`;
-    el.addEventListener('click', () => {
-      window.location.href = 'detail.html?id=' + p.id;
-    });
-
-    el.innerHTML = `
-      <img src="${p.image_url ? API_URL.replace('/api', '') + p.image_url : 'https://via.placeholder.com/300'}" alt="${p.name}" class="w-full h-48 object-cover rounded-md mb-3">
-      <h2 class="font-semibold text-lg mb-1 text-gray-900 dark:text-white">${p.name}</h2>
-      <p class="text-gray-500 text-sm dark:text-gray-400 mb-1">
-        ${p.category}${variant ? ' - ' + variant.color : ''}
-      </p>
-      <p class="text-amber-700 font-bold text-md mb-1">
-        ${variant ? 'Rp' + parseInt(variant.price).toLocaleString('id-ID') : 'Harga tidak tersedia'}
-      </p>
-    `;
-
-    container.appendChild(el);
-  });
-
-  // Inisialisasi tilt setelah semua elemen ditambahkan
-  VanillaTilt.init(document.querySelectorAll(".card"), {
-    max: 15,
-    speed: 400,
-    glare: true,
-    "max-glare": 0.3
-  });
-}
-
-loadProducts();
-
-  </script>
+  loadProducts();
+</script>
 </body>
 </html>
