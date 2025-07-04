@@ -184,161 +184,184 @@
 <!-- Script -->
 <!-- Pastikan bagian akhir script seperti ini -->
 <script>
-  const API_URL = 'https://rifkira.psl17.my.id/api';
-  let cart = JSON.parse(localStorage.getItem('cart')) || [];
-  let detailCart = [];
+const API_URL = 'https://rifkira.psl17.my.id/api';
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
+let detailCart = [];
 
+document.addEventListener('DOMContentLoaded', () => {
+  // Toggle menu
+  const btn = document.getElementById('menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  if (btn && menu) {
+    btn.addEventListener('click', () => {
+      menu.classList.toggle('hidden');
+      btn.classList.toggle('open');
+    });
+  }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('menu-btn');
-    const menu = document.getElementById('mobile-menu');
-
-    if (btn && menu) {
-      btn.addEventListener('click', () => {
-        menu.classList.toggle('hidden');
-        btn.classList.toggle('open');
-      });
-    }
-
-    // Toggle shadow on scroll
-    const header = document.getElementById('main-header');
+  // Scroll shadow
+  const header = document.getElementById('main-header');
+  if (header) {
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 10) {
-        header.classList.add('shadow-md');
-      } else {
-        header.classList.remove('shadow-md');
-      }
-    });
-  });
-
-  // Toggle Dark Mode
-  document.getElementById('darkToggle').addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    document.getElementById('darkToggle').classList.toggle('active');
-  });
-
-  async function loadCart() {
-    const container = document.getElementById('daftar-keranjang');
-    container.innerHTML = '';
-
-    if (cart.length === 0) {
-      container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Keranjang kosong.</p>';
-      return;
-    }
-
-    detailCart = [];
-
-for (let item of cart) {
-  const res = await fetch(`${API_URL}/products/${item.product_id}`);
-  const p = await res.json();
-
-  // Temukan varian yang cocok
-  const variant = p.variants?.find(v => 
-    v.id === item.variant_id || 
-    (v.size === item.size && v.color === item.color)
-  );
-
-  if (!variant) continue;
-
-  detailCart.push({
-    id: p.id,
-    name: p.name,
-    image_url: p.image_url,
-    qty: item.qty,
-    price: variant.price,
-    size: variant.size,
-    color: variant.color,
-    variant_id: variant.id
-  });
-}
-
-
-    renderCart();
-  }
-
-  function renderCart() {
-    const container = document.getElementById('daftar-keranjang');
-    container.innerHTML = '';
-    let total = 0;
-
-    detailCart.forEach((item, index) => {
-      const subtotal = item.qty * item.price;
-      total += subtotal;
-
-      const el = document.createElement('div');
-      el.className = 'card p-4 rounded-xl flex items-center gap-4 fade-up';
-      el.setAttribute('data-id', item.id);
-      el.setAttribute('data-tilt', '');
-      el.setAttribute('style', `animation-delay: ${index * 100}ms`);
-      el.innerHTML = `
-        <img src="${item.image_url ? API_URL.replace('/api', '') + item.image_url : 'https://via.placeholder.com/300'}" class="w-24 h-24 rounded object-cover shadow" />
-
-        <div class="flex-1">
-          <div class="font-bold text-lg">${item.name}</div>
-          <div class="text-sm text-gray-600 dark:text-gray-400">
-            <span>Ukuran: ${item.size || '-'}</span> | <span>Warna: ${item.color || '-'}</span><br>
-            <input type="number" min="1" value="${item.qty}" class="qty-input ..." />
-            x Rp${item.price.toLocaleString()}
-          </div>
-          <div class="subtotal text-amber-700 dark:text-amber-300 font-bold">Rp${subtotal.toLocaleString()}</div>
-        </div>
-        <button class="hapus-btn text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
-      `;
-      container.appendChild(el);
-    });
-
-    container.innerHTML += `<div id="total-harga" class="text-right font-bold text-xl mt-4">Total: Rp${total.toLocaleString()}</div>`;
-
-    // Aktifkan kembali tilt & animasi
-    VanillaTilt.init(document.querySelectorAll(".card"), {
-      max: 10,
-      speed: 400,
-      glare: true,
-      "max-glare": 0.3
-    });
-
-    setupEvents();
-  }
-
-  function setupEvents() {
-    document.querySelectorAll('.hapus-btn').forEach((btn, index) => {
-      btn.addEventListener('click', () => {
-        const id = parseInt(btn.parentElement.getAttribute('data-id'));
-        cart = cart.filter(c => c.product_id !== id);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        loadCart();
-      });
-    });
-
-    document.querySelectorAll('.qty-input').forEach((input, index) => {
-      input.addEventListener('change', () => {
-        let newQty = parseInt(input.value);
-        if (newQty < 1) newQty = 1;
-        input.value = newQty;
-
-        detailCart[index].qty = newQty;
-        cart[index].qty = newQty;
-        localStorage.setItem('cart', JSON.stringify(cart));
-        renderCart(); // rerender & re-apply animasi
-      });
+      header.classList.toggle('shadow-md', window.scrollY > 10);
     });
   }
 
-  function checkoutWhatsApp() {
-    let total = 0;
-    let message = 'Halo, saya ingin memesan:\n';
-    detailCart.forEach(p => {
-      message += `- ${p.name} x ${p.qty} = Rp${(p.price * p.qty).toLocaleString()}\n`;
-      total += p.price * p.qty;
+  // Dark mode toggle
+  const darkToggle = document.getElementById('darkToggle');
+  if (darkToggle) {
+    darkToggle.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      darkToggle.classList.toggle('active');
     });
-    message += `\nTotal: Rp${total.toLocaleString()}`;
-    const wa = `https://wa.me/6281389730407?text=${encodeURIComponent(message)}`;
-    window.open(wa, '_blank');
   }
 
   loadCart();
-  
+});
+
+async function loadCart() {
+  const container = document.getElementById('daftar-keranjang');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (cart.length === 0) {
+    container.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Keranjang kosong.</p>';
+    return;
+  }
+
+  detailCart = [];
+
+  for (const item of cart) {
+    try {
+      const res = await fetch(`${API_URL}/products/${item.product_id}`);
+      if (!res.ok) continue;
+      const p = await res.json();
+
+      const variant = p.variants?.find(v =>
+        v.id === item.variant_id ||
+        (v.size === item.size && v.color === item.color)
+      );
+
+      if (!variant) continue;
+
+      detailCart.push({
+        id: p.id,
+        name: p.name,
+        image_url: p.image_url,
+        qty: item.qty,
+        price: variant.price,
+        size: variant.size,
+        color: variant.color,
+        variant_id: variant.id
+      });
+    } catch (err) {
+      console.error('Gagal memuat data produk:', err);
+    }
+  }
+
+  renderCart();
+}
+
+function renderCart() {
+  const container = document.getElementById('daftar-keranjang');
+  if (!container) return;
+  container.innerHTML = '';
+
+  let total = 0;
+
+  detailCart.forEach((item, index) => {
+    const subtotal = item.qty * item.price;
+    total += subtotal;
+
+    const el = document.createElement('div');
+    el.className = 'card p-4 rounded-xl flex items-center gap-4 fade-up bg-white dark:bg-gray-800 shadow-md';
+    el.setAttribute('data-id', item.variant_id);
+    el.setAttribute('style', `animation-delay: ${index * 100}ms`);
+    el.setAttribute('data-tilt', '');
+
+    el.innerHTML = `
+      <img src="${item.image_url ? API_URL.replace('/api', '') + item.image_url : 'https://via.placeholder.com/300'}" class="w-24 h-24 rounded object-cover shadow" />
+
+      <div class="flex-1">
+        <div class="font-bold text-lg text-gray-900 dark:text-white">${item.name}</div>
+        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          <span>Ukuran: ${item.size}</span> | <span>Warna: ${item.color}</span>
+        </div>
+        <div class="flex items-center gap-2 mb-1">
+          <input type="number" min="1" value="${item.qty}" class="qty-input w-16 rounded border px-2 py-1 dark:bg-gray-700 dark:text-white" />
+          <span class="text-gray-600 dark:text-gray-300">x Rp${item.price.toLocaleString()}</span>
+        </div>
+        <div class="subtotal text-amber-700 dark:text-amber-300 font-bold">Rp${subtotal.toLocaleString()}</div>
+      </div>
+      <button class="hapus-btn text-red-500 hover:text-red-700 font-bold text-2xl">&times;</button>
+    `;
+
+    container.appendChild(el);
+  });
+
+  container.innerHTML += `<div id="total-harga" class="text-right font-bold text-xl mt-4 dark:text-white">Total: Rp${total.toLocaleString()}</div>`;
+
+  VanillaTilt.init(document.querySelectorAll(".card"), {
+    max: 10,
+    speed: 400,
+    glare: true,
+    "max-glare": 0.3
+  });
+
+  setupEvents();
+}
+
+function setupEvents() {
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, index) => {
+    const variantId = detailCart[index].variant_id;
+
+    const deleteBtn = card.querySelector('.hapus-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        cart = cart.filter(c => c.variant_id !== variantId);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+      });
+    }
+
+    const qtyInput = card.querySelector('.qty-input');
+    if (qtyInput) {
+      qtyInput.addEventListener('change', () => {
+        let newQty = parseInt(qtyInput.value);
+        if (isNaN(newQty) || newQty < 1) newQty = 1;
+        qtyInput.value = newQty;
+
+        detailCart[index].qty = newQty;
+        const cartIndex = cart.findIndex(c => c.variant_id === variantId);
+        if (cartIndex > -1) cart[cartIndex].qty = newQty;
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+      });
+    }
+  });
+}
+
+function checkoutWhatsApp() {
+  if (detailCart.length === 0) return;
+
+  let total = 0;
+  let message = 'Halo, saya ingin memesan:\n';
+
+  detailCart.forEach(p => {
+    const subtotal = p.qty * p.price;
+    total += subtotal;
+    message += `- ${p.name} (${p.size}, ${p.color}) x ${p.qty} = Rp${subtotal.toLocaleString()}\n`;
+  });
+
+  message += `\nTotal: Rp${total.toLocaleString()}`;
+  const wa = `https://wa.me/6281389730407?text=${encodeURIComponent(message)}`;
+  window.open(wa, '_blank');
+}
 </script>
+
 
 </body>
 </html>
