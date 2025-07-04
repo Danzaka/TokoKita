@@ -255,7 +255,7 @@
         }
     }
 
-   async function loadProducts() {
+async function loadProducts() {
   const res = await fetch(`${API_URL}/products`);
   const data = await res.json();
   const container = document.getElementById('produk-container');
@@ -288,6 +288,7 @@
     container.appendChild(el);
   });
 
+  // Inisialisasi tilt setelah semua elemen ditambahkan
   VanillaTilt.init(document.querySelectorAll(".card"), {
     max: 15,
     speed: 400,
@@ -296,16 +297,8 @@
   });
 }
 
+loadProducts();
 
-      VanillaTilt.init(document.querySelectorAll(".card"), {
-        max: 15,
-        speed: 400,
-        glare: true,
-        "max-glare": 0.3
-      });
-    }
-
-    loadProducts();
   </script>
 </body>
 </html>
