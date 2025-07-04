@@ -185,43 +185,56 @@
 </footer>
 
 <script>
-  const API_URL = 'https://rifkira.psl17.my.id/api/products';
-  const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get('id');
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('menu-btn');
-    const menu = document.getElementById('mobile-menu');
+const API_URL = 'https://rifkira.psl17.my.id/api/products';
+const id = new URLSearchParams(window.location.search).get('id');
 
-    if (btn && menu) {
-      btn.addEventListener('click', () => {
-        menu.classList.toggle('hidden');
-        btn.classList.toggle('open');
-      });
-    }
-
-    // Toggle shadow on scroll
-    const header = document.getElementById('main-header');
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 10) {
-        header.classList.add('shadow-md');
-      } else {
-        header.classList.remove('shadow-md');
-      }
+// Saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  // Hamburger toggle
+  const btn = document.getElementById('menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  if (btn && menu) {
+    btn.addEventListener('click', () => {
+      menu.classList.toggle('hidden');
+      btn.classList.toggle('open');
     });
-  });
+  }
 
-  document.getElementById('darkToggle').addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    document.getElementById('darkToggle').classList.toggle('active');
-  });
+  // Scroll shadow
+  const header = document.getElementById('main-header');
+  if (header) {
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('shadow-md', window.scrollY > 10);
+    });
+  }
+
+  // Dark mode
+  const darkToggle = document.getElementById('darkToggle');
+  if (darkToggle) {
+    darkToggle.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      darkToggle.classList.toggle('active');
+    });
+  }
+
+  updateCartCount();
+  loadDetail();
+});
+
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  const total = cart.reduce((sum, item) => sum + item.qty, 0);
+  const countElem = document.getElementById('cart-count');
+  if (countElem) countElem.textContent = total;
+}
+
 async function loadDetail() {
   try {
-    updateCartCount();
-
     const res = await fetch(`${API_URL}/${id}`);
+    if (!res.ok) throw new Error('Produk tidak ditemukan');
     const data = await res.json();
     const container = document.getElementById('product');
+    if (!container) return;
 
     const variants = data.variants || [];
     if (variants.length === 0) {
@@ -245,7 +258,6 @@ async function loadDetail() {
           Rp${parseInt(selectedVariant.price).toLocaleString('id-ID')}
         </p>
 
-        <!-- Pilih Ukuran -->
         <div class="mb-4">
           <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Ukuran:</label>
           <select id="ukuran" class="w-full rounded-lg border dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-800 dark:text-white">
@@ -253,7 +265,6 @@ async function loadDetail() {
           </select>
         </div>
 
-        <!-- Pilih Warna -->
         <div class="mb-4">
           <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">Warna:</label>
           <select id="warna" class="w-full rounded-lg border dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-800 dark:text-white">
@@ -266,7 +277,7 @@ async function loadDetail() {
       </div>
     `;
 
-    // Perbarui harga saat pilihan berubah
+    // Element & Event untuk update harga
     const ukuranSelect = document.getElementById('ukuran');
     const warnaSelect = document.getElementById('warna');
     const hargaLabel = document.getElementById('hargaProduk');
@@ -284,8 +295,9 @@ async function loadDetail() {
 
     ukuranSelect.addEventListener('change', updateHarga);
     warnaSelect.addEventListener('change', updateHarga);
-    updateHarga();
+    updateHarga(); // Initial update
 
+    // Tambah ke keranjang
     document.getElementById('addToCartBtn').addEventListener('click', () => {
       if (!selectedVariant) {
         alert("Varian yang dipilih tidak tersedia.");
@@ -313,6 +325,7 @@ async function loadDetail() {
       flyToCartAnimation();
     });
 
+    // Efek Tilt
     VanillaTilt.init(document.querySelectorAll(".card"), {
       max: 15,
       speed: 400,
@@ -321,59 +334,40 @@ async function loadDetail() {
     });
 
   } catch (err) {
-    document.getElementById('product').innerHTML = `<p class="text-red-600">Gagal memuat detail produk.</p>`;
-    console.error(err);
+    const container = document.getElementById('product');
+    if (container) container.innerHTML = `<p class="text-red-600">Gagal memuat detail produk.</p>`;
+    console.error('Error:', err);
   }
 }
 
 function flyToCartAnimation() {
   const img = document.getElementById('productImage');
-  if (!img) return;
-
   const cartIcon = document.querySelector('a[href="keranjang.html"]');
-  if (!cartIcon) return;
+  if (!img || !cartIcon) return;
 
-  const imgClone = img.cloneNode();
+  const clone = img.cloneNode();
   const rect = img.getBoundingClientRect();
-  imgClone.style.position = 'fixed';
-  imgClone.style.top = `${rect.top}px`;
-  imgClone.style.left = `${rect.left}px`;
-  imgClone.style.width = `${img.offsetWidth}px`;
-  imgClone.style.height = `${img.offsetHeight}px`;
-  imgClone.style.zIndex = 1000;
-  imgClone.style.transition = 'all 0.8s ease-in-out';
-  document.body.appendChild(imgClone);
+  clone.style.position = 'fixed';
+  clone.style.top = `${rect.top}px`;
+  clone.style.left = `${rect.left}px`;
+  clone.style.width = `${img.offsetWidth}px`;
+  clone.style.height = `${img.offsetHeight}px`;
+  clone.style.zIndex = 1000;
+  clone.style.transition = 'all 0.8s ease-in-out';
+  document.body.appendChild(clone);
 
   const cartRect = cartIcon.getBoundingClientRect();
   setTimeout(() => {
-    imgClone.style.top = `${cartRect.top}px`;
-    imgClone.style.left = `${cartRect.left}px`;
-    imgClone.style.width = '30px';
-    imgClone.style.height = '30px';
-    imgClone.style.opacity = 0;
+    clone.style.top = `${cartRect.top}px`;
+    clone.style.left = `${cartRect.left}px`;
+    clone.style.width = '30px';
+    clone.style.height = '30px';
+    clone.style.opacity = 0;
   }, 10);
 
-  setTimeout(() => imgClone.remove(), 900);
+  setTimeout(() => clone.remove(), 900);
 }
-
-
-// Fungsi bantu jika warna disimpan sebagai nama (misalnya: "Merah")
-function warnaKeHex(nama) {
-  const map = {
-    "merah": "#f87171",
-    "biru": "#60a5fa",
-    "hijau": "#34d399",
-    "kuning": "#facc15",
-    "hitam": "#111827",
-    "putih": "#f9fafb",
-    "ungu": "#a78bfa",
-    "coklat": "#a16207"
-  };
-  return map[nama.toLowerCase()] || "#d1d5db"; // default abu
-}
-
-
-  loadDetail();
 </script>
+
 </body>
 </html>
